@@ -13,6 +13,7 @@ int* mas;
 int MasSize;
 vector<bool> masOfStates;
 int countOfThreads;
+int CoT;
 condition_variable condition;
 mutex mt;
 int numbToEnd = -1;
@@ -25,12 +26,18 @@ bool consistMetk(vector<int> vec, int a) {
 	return false;
 }
 bool checkAllThreadsStop() {
-	for (int i = 0; i < countOfThreads; i++) {
+	for (int i = 0; i < CoT; i++) {
 		if (masOfStates[i] == true) {
 			return false;
 		}
 	}
 	return true;
+}
+void PrintStates() {
+	for (int i = 0; i < masOfStates.size(); i++) {
+		cout <<"thread #"+to_string(i)+to_string((bool)masOfStates[i])+ " ";
+	}
+	cout << endl;
 }
 void FThread(int x) {
 	srand(x);
@@ -49,7 +56,8 @@ void FThread(int x) {
 		}
 		
 		
-		int ch = rand()%(MasSize-1);
+		int ch = rand();
+		ch %= MasSize;
 		
 		
 		if (mas[ch] == 0) {
@@ -68,7 +76,7 @@ void FThread(int x) {
 			for (int i = 0; i < metki.size(); i++) {
 				cout << metki[i] << " ";
 			}
-			cout << endl << MasSize + 1 << endl;
+			cout << endl << MasSize << endl;
 			condition.notify_all();
 			condition.wait(ul, [=]() {return masOfStates[x] == true; });
 			}
@@ -86,14 +94,15 @@ bool allThreadsEnded(bool* mas, int size) {
 int main(void) {
 
 	setlocale(LC_ALL, "rus");
-	cout << "Ââåäèòå ðàçìåð ìàññèâà" << endl;
+	cout << "Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ñ€Ð°Ð·Ð¼ÐµÑ€ Ð¼Ð°ÑÑÐ¸Ð²Ð°" << endl;
 	cin >> MasSize;
 	mas = new int[MasSize];
 	for (int i = 0; i < MasSize; i++) {
 		mas[i] = 0;
 	}
-	cout << "Ââåäèòå êîëè÷åñòâî ïîòîêîâ maker" << endl;
+	cout << "Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð¿Ð¾Ñ‚Ð¾ÐºÐ¾Ð² maker" << endl;
 	cin >> countOfThreads;
+	CoT = countOfThreads;
 
 	vector<thread> Threads;
 	for (int i = 0; i < countOfThreads; i++) {
@@ -113,7 +122,7 @@ int main(void) {
 		for (int i = 0; i < MasSize; i++) {
 			cout << mas[i] << " ";
 		}
-		cout << "Íîìåð ïîòîêà äëÿ çàâåðøåíèÿ: " << endl;
+		cout <<endl<< "ÐÐ¾Ð¼ÐµÑ€ Ð¿Ð¾Ñ‚Ð¾ÐºÐ° Ð´Ð»Ñ Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸Ñ: " << endl;
 		int numb;
 		cin >> numb;	
 		if (numb >= Threads.size()) {
@@ -122,12 +131,13 @@ int main(void) {
 		endedThreads.push_back(numb);
 		masOfStates[numb] = true;
 		numbToEnd = numb;
-		for (int i = 0; i < countOfThreads; i++) {
+		condition.notify_all();
+		condition.wait(ul, [=]() {return checkAllThreadsStop(); });
+		for (int i = 0; i < CoT; i++) {
 			if (!consistMetk(endedThreads, i)) {
 				masOfStates[i] = true;
 			}
 		}
-		condition.wait(ul, [=]() {return checkAllThreadsStop(); });
 		condition.notify_all();
 		ul.unlock();
 
